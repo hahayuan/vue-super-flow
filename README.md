@@ -24,6 +24,19 @@ Vue.use(SuperFlow)
 
 ```
 
+### libs
+
+```npm
+npm install element-ui -S
+```
+
+```js
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css';
+
+Vue.use(ElementUI);
+```
+
 ## Attributes
 
 |属性                |类型                |默认值                   |描述                                     | 

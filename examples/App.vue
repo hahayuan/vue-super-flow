@@ -18,16 +18,75 @@
       :link-desc="linkDesc">
       <template v-slot:node="{meta}">
         <div :class="`flow-node flow-node-${meta.prop}`">
-          <header>
-            {{meta.name}}
+          <header class="ellipsis">
+            {{ meta.name }}
           </header>
           <section>
-            {{meta.desc}}
+            {{ meta.desc }}
           </section>
         </div>
       </template>
     </super-flow>
 
+    <el-dialog
+        :title="drawerConf.title"
+        :visible.sync="drawerConf.visible"
+        :close-on-click-modal="false"
+        width="500px">
+      <el-form
+          @keyup.native.enter="settingSubmit"
+          @submit.native.prevent
+          v-show="drawerConf.type === drawerType.node"
+          ref="nodeSetting"
+          :model="nodeSetting">
+        <el-form-item
+            label="节点名称"
+            prop="name">
+          <el-input
+              v-model="nodeSetting.name"
+              placeholder="请输入节点名称"
+              maxlength="30">
+          </el-input>
+        </el-form-item>
+        <el-form-item
+            label="节点描述"
+            prop="desc">
+          <el-input
+              v-model="nodeSetting.desc"
+              placeholder="请输入节点描述"
+              maxlength="30">
+          </el-input>
+        </el-form-item>
+      </el-form>
+      <el-form
+          @keyup.native.enter="settingSubmit"
+          @submit.native.prevent
+          v-show="drawerConf.type === drawerType.link"
+          ref="linkSetting"
+          :model="linkSetting">
+        <el-form-item
+            label="连线描述"
+            prop="desc">
+          <el-input
+              v-model="linkSetting.desc"
+              placeholder="请输入连线描述">
+          </el-input>
+        </el-form-item>
+      </el-form>
+      <span
+          slot="footer"
+          class="dialog-footer">
+        <el-button
+            @click="drawerConf.cancel">
+          取 消
+        </el-button>
+        <el-button
+            type="primary"
+            @click="settingSubmit">
+          确 定
+        </el-button>
+      </span>
+    </el-dialog>
 
   </div>
 </template>
@@ -202,7 +261,7 @@
             {
               label: '编辑',
               selected: (node, coordinate) => {
-                console.log(node, coordinate)
+                this.drawerConf.open(drawerType.node, node)
               }
             }
           ]
@@ -222,7 +281,7 @@
               label: '编辑',
               disable: false,
               selected: (link, coordinate) => {
-                console.log(link, coordinate)
+                this.drawerConf.open(drawerType.link, link)
               }
             }
           ]
@@ -429,6 +488,14 @@
         this.linkList = linkList
       }, 100)
     },
+    mounted () {
+      this.$nextTick(() => {
+        this.$el.scrollBy({
+          left: (this.$el.scrollWidth - this.$el.clientWidth) / 2,
+          top: (this.$el.scrollHeight - this.$el.clientHeight) / 2
+        })
+      })
+    },
     methods: {
       enterIntercept(formNode, toNode, graph) {
         const formType = formNode.meta.prop
@@ -463,17 +530,50 @@
       },
       linkDesc(link) {
         return link.meta ? link.meta.desc : ''
+      },
+      settingSubmit () {
+        const conf = this.drawerConf
+        if (this.drawerConf.type === drawerType.node) {
+          if (!conf.info.meta) conf.info.meta = {}
+          Object.keys(this.nodeSetting).forEach(key => {
+            this.$set(conf.info.meta, key, this.nodeSetting[key])
+          })
+          this.$refs.nodeSetting.resetFields()
+        } else {
+          if (!conf.info.meta) conf.info.meta = {}
+          Object.keys(this.linkSetting).forEach(key => {
+            this.$set(conf.info.meta, key, this.linkSetting[key])
+          })
+          this.$refs.linkSetting.resetFields()
+        }
+        conf.visible = false
       }
     }
   }
 </script>
 
 <style lang="less">
+  .ellipsis {
+    white-space   : nowrap;
+    text-overflow : ellipsis;
+    overflow      : hidden;
+    word-wrap     : break-word;
+  }
+
   .super-flow-base-demo {
     width            : 100%;
-    height           : 800px;
+    height           : 100vh;
     margin           : 0 auto;
     background-color : #f5f5f5;
+    overflow         : scroll;
+
+    .super-flow {
+      width  : 4000px;
+      height : 4000px;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
 
     .super-flow__node {
       .flow-node {
